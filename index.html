@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TDMS1VN - Bảng Điều Khiển Dịch Vụ Social</title>
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; }
+    .toast { display: flex; align-items: center; gap: 10px; padding: 12px 20px; background: #1e293b; color: white; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); transition: all 0.3s ease; margin-bottom: 10px; }
+    .badge-status { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-pending { background-color: #fef3c7; color: #d97706; }
+    .badge-processing { background-color: #dbeafe; color: #2563eb; }
+    .badge-completed { background-color: #dcfce7; color: #16a34a; }
+    .badge-canceled { background-color: #fee2e2; color: #dc2626; }
+  </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- HEADER & NAVIGATION -->
+  <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      
+      <!-- Logo -->
+      <a href="#" class="flex items-center gap-2 font-bold text-xl text-indigo-400">
+        <i class="fa-solid fa-rocket text-2xl"></i>
+        <span>TDMS1VN</span>
+      </a>
+
+      <!-- Menu Điều Hướng -->
+      <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+        <a href="#" class="text-indigo-400 hover:text-indigo-300"><i class="fa-solid fa-house mr-1"></i> Trang chủ</a>
+        <a href="#" class="hover:text-white"><i class="fa-solid fa-chart-line mr-1"></i> Tiến trình</a>
+        <a href="#" class="hover:text-white"><i class="fa-solid fa-money-bill-transfer mr-1"></i> Giao dịch</a>
+        <button id="btn-nav-deposit" class="hover:text-white text-emerald-400 font-semibold"><i class="fa-solid fa-wallet mr-1"></i> Nạp tiền</button>
+        <a href="#" class="hover:text-white"><i class="fa-solid fa-code mr-1"></i> API V2</a>
+        <a href="#" class="hover:text-white"><i class="fa-solid fa-gift mr-1 text-amber-400"></i> Kiếm Tiền</a>
+      </nav>
+
+      <!-- Số Dư & User Profile -->
+      <div class="flex items-center gap-4">
+        <div class="bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-700 text-right">
+          <div class="text-xs text-slate-400">Số dư hiện tại</div>
+          <div class="text-sm font-bold text-emerald-400"><span id="user-balance">0</span> VNĐ</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-user"></i>
+          </div>
+          <span id="user-display-name" class="hidden sm:inline text-sm font-medium">Đang tải...</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <div class="max-w-7xl mx-auto px-4 py-8 flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 w-full">
+
+    <!-- SIDEBAR CATEGORIES -->
+    <aside class="space-y-6">
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-4">
+        <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Menu Dịch Vụ Social</h3>
+        <ul class="space-y-1 text-sm font-medium">
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-indigo-600/20 text-indigo-400"><i class="fa-brands fa-facebook w-5 text-center"></i> Facebook</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-brands fa-tiktok w-5 text-center"></i> TikTok</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-brands fa-instagram w-5 text-center"></i> Instagram</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-brands fa-telegram w-5 text-center"></i> Telegram</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-brands fa-youtube w-5 text-center"></i> YouTube</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-solid fa-bag-shopping w-5 text-center"></i> Shopee</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-brands fa-x-twitter w-5 text-center"></i> X - Twitter</a></li>
+          <li><a href="#" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-700/50 text-slate-300"><i class="fa-solid fa-at w-5 text-center"></i> Threads</a></li>
+        </ul>
+      </div>
+
+      <!-- Thống Kê Nhanh -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-4 space-y-3">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-400">Tổng đã chi:</span>
+          <span id="total-spent-amount" class="font-bold text-slate-200">0 đ</span>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-400">Tổng đơn hàng:</span>
+          <span id="total-orders-count" class="font-bold text-slate-200">0</span>
+        </div>
+        <button id="btn-quick-deposit" class="w-full mt-2 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-sm font-semibold transition">
+          <i class="fa-solid fa-qrcode mr-1"></i> Nạp Tiền Ngay
+        </button>
+      </div>
+    </aside>
+
+    <!-- CONTENT KHU VỰC CHÍNH -->
+    <main class="lg:col-span-3 space-y-8">
+      
+      <!-- FORM TẠO ĐƠN HÀNG -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-indigo-400">
+          <i class="fa-solid fa-cart-plus"></i> Tạo Đơn Hàng Dịch Vụ Mới
+        </h2>
+
+        <form id="smm-order-form" class="space-y-5">
+          <!-- Select Danh Mục -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">1. Chọn Danh Mục Dịch Vụ</label>
+            <select id="category-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
+              <option value="" disabled selected>Đang kết nối API dịch vụ...</option>
+            </select>
+          </div>
+
+          <!-- Select Máy Chủ -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">2. Chọn Máy Chủ (Server)</label>
+            <select id="service-select" disabled class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500 disabled:opacity-50">
+              <option value="" disabled selected>-- Chọn máy chủ --</option>
+            </select>
+          </div>
+
+          <!-- Chi Tiết Dịch Vụ -->
+          <div id="service-details-box" class="hidden bg-slate-900/60 border border-indigo-500/30 rounded-lg p-4 text-sm space-y-2">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Đơn giá:</span>
+              <span id="service-rate" class="font-semibold text-indigo-400">0 đ / 1.000</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Giới hạn mua:</span>
+              <span id="service-min-max" class="text-slate-300">Min: 0 | Max: 0</span>
+            </div>
+            <div class="text-slate-300 text-xs pt-2 border-t border-slate-800" id="service-description">
+              Mô tả dịch vụ...
+            </div>
+          </div>
+
+          <!-- Link/ID Target -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">3. Liên Kết (Link/ID Bài Viết hoặc Kênh)</label>
+            <input type="text" id="order-link" placeholder="Nhập đường dẫn bài viết, trang cá nhân..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Số Lượng -->
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">4. Số Lượng Cần Tăng</label>
+            <input type="number" id="order-quantity" placeholder="Nhập số lượng..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Tổng Tiền & Nút Tạo Đơn -->
+          <div class="pt-4 border-t border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <span class="text-slate-400 text-sm">Tổng thanh toán:</span>
+              <div class="text-2xl font-bold text-emerald-400"><span id="total-price">0</span> VNĐ</div>
+            </div>
+            <button type="submit" id="btn-submit-order" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-8 py-3 rounded-lg transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-cart-shopping"></i> THANH TOÁN ĐƠN HÀNG
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- BẢNG LỊCH SỬ ĐƠN HÀNG -->
+      <section class="bg-slate-800 border border-slate-700 rounded-xl p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <h2 class="text-xl font-bold flex items-center gap-2 text-slate-200">
+            <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i> Lịch Sử Đơn Hàng
+          </h2>
+          
+          <div class="flex items-center gap-2">
+            <input type="text" id="search-order-input" placeholder="Tìm mã đơn/link..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+            <select id="filter-status-select" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="Pending">Chờ xử lý</option>
+              <option value="Processing">Đang chạy</option>
+              <option value="Completed">Hoàn thành</option>
+              <option value="Canceled">Đã hủy</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-900 text-slate-400 uppercase text-xs">
+              <tr>
+                <th class="p-3">Mã Đơn</th>
+                <th class="p-3">Thời Gian</th>
+                <th class="p-3">Dịch Vụ</th>
+                <th class="p-3">Liên Kết</th>
+                <th class="p-3">Số Lượng</th>
+                <th class="p-3">Tổng Tiền</th>
+                <th class="p-3">Trạng Thái</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-slate-700/50">
+              <tr>
+                <td colspan="7" class="text-center py-6 text-slate-500">Đang tải lịch sử đơn...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL NẠP TIỀN -->
+  <div id="deposit-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-xl max-w-md w-full p-6 space-y-5 relative">
+      <button id="btn-close-modal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-xl">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <h3 class="text-lg font-bold text-emerald-400 flex items-center gap-2">
+        <i class="fa-solid fa-wallet"></i> Nạp Tiền Vào Tài Khoản
+      </h3>
+
+      <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-xs space-y-1">
+        <p class="font-bold text-amber-400"><i class="fa-solid fa-credit-card"></i> Nạp Thẻ Cào Chiết Khấu 20%:</p>
+        <p class="text-slate-300">Viettel, Vinaphone, Mobifone, Zing, Gate. Mệnh giá chính xác 100%.</p>
+      </div>
+
+      <div class="text-center space-y-2 bg-slate-900 p-4 rounded-lg border border-slate-700">
+        <img src="https://img.vietqr.io/image/970422-123456789-compact2.png?amount=50000&addInfo=TDMS1VN" alt="VietQR" class="mx-auto rounded w-48 border border-slate-700">
+        <p class="text-xs text-slate-400">Ngân hàng: <strong>MBBank</strong> | STK: <strong class="text-emerald-400">123456789</strong></p>
+        <p class="text-xs text-slate-400">Chủ TK: <strong>TDMS1VN ADMIN</strong></p>
+      </div>
+
+      <form id="deposit-form" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Số Tiền Đã Chuyển / Mệnh Giá Thẻ (VNĐ)</label>
+          <input type="number" id="deposit-amount-input" placeholder="Ví dụ: 50000" class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Nội Dung CK / Mã Thẻ + Serial</label>
+          <input type="text" id="deposit-memo-input" placeholder="Nội dung ck hoặc Mã Thẻ + Seri..." class="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-emerald-500">
+        </div>
+
+        <button type="submit" id="btn-submit-deposit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded text-sm transition">
+          <i class="fa-solid fa-paper-plane"></i> XÁC NHẬN ĐÃ CHUYỂN KHOẢN
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT MAIN MODULE -->
+  <script type="module" src="main.js"></script>
+</body>
+</html>
