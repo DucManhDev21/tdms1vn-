@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TDMS1VN - Hệ Thống Dịch Vụ Mạng Xã Hội</title>
+    <title>TĂNG TÌM VIỆT - Hệ Thống Dịch Vụ Mạng Xã Hội</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -14,41 +14,59 @@
 
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-header">
-            <img src="https://tangtimviet.com/assets/images/logo.png" alt="Logo" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/150x40?text=SMM+PANEL'">
-            <button id="close-sidebar-btn"><i class="fa-solid fa-xmark"></i></button>
+            <img src="https://tangtimviet.com/assets/images/logo.png" alt="TangTimViet Logo" class="sidebar-logo" onerror="this.src='https://via.placeholder.com/180x45?text=TANGTIMVIET.COM'">
+            <button id="close-sidebar-btn" class="close-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
         
         <div class="sidebar-content">
             <div class="menu-group">
                 <div class="menu-title">BẢNG ĐIỀU KHIỂN</div>
-                <a href="#" class="menu-item active" data-target="profile-section">
-                    <i class="fa-regular fa-user"></i> Thông Tin Cá Nhân
+                <a href="#" class="menu-item" onclick="switchView('profile-section')">
+                    <i class="fa-regular fa-user"></i> <span>Thông Tin Cá Nhân</span>
                 </a>
-                <a href="#" class="menu-item" data-target="pricing-section">
-                    <i class="fa-solid fa-list-check"></i> Bảng giá và cấp bậc
+                <a href="#" class="menu-item" onclick="switchView('pricing-section')">
+                    <i class="fa-solid fa-crown"></i> <span>Bảng giá và cấp bậc</span>
                 </a>
                 </div>
 
             <div class="menu-group">
                 <div class="menu-title">DỊCH VỤ</div>
-                <a href="#" class="menu-item" data-target="order-section">
-                    <i class="fa-solid fa-cart-shopping"></i> Mua dịch vụ
+                <a href="#" class="menu-item" onclick="switchView('order-section')">
+                    <i class="fa-solid fa-cart-shopping"></i> <span>Mua dịch vụ</span>
                 </a>
-                <a href="#" class="menu-item" data-target="recharge-section">
-                    <i class="fa-solid fa-wallet"></i> Nạp Tiền
+                <a href="#" class="menu-item" onclick="switchView('recharge-section')">
+                    <i class="fa-solid fa-wallet"></i> <span>Nạp Tiền</span>
                 </a>
-                <a href="#" class="menu-item" data-target="history-section">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Danh Sách Đơn
+                <a href="#" class="menu-item" onclick="switchView('history-section')">
+                    <i class="fa-solid fa-list-check"></i> <span>Danh Sách Đơn</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('history-section')">
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span>Lịch Sử Hoạt Động</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('history-section')">
+                    <i class="fa-solid fa-calendar-days"></i> <span>Lịch chạy đơn</span>
+                </a>
+                <a href="#" class="menu-item" onclick="switchView('dashboard-section')">
+                    <i class="fa-solid fa-chart-line"></i> <span>Thống kê</span>
                 </a>
             </div>
 
             <div class="menu-group">
                 <div class="menu-title">NỀN TẢNG</div>
-                <div class="platform-item"><i class="fa-brands fa-facebook text-blue"></i> Facebook</div>
-                <div class="platform-item"><i class="fa-brands fa-tiktok text-dark"></i> TikTok</div>
-                <div class="platform-item"><i class="fa-brands fa-instagram text-pink"></i> Instagram</div>
-                <div class="platform-item"><i class="fa-brands fa-youtube text-red"></i> YouTube</div>
-                <div class="platform-item"><i class="fa-brands fa-telegram text-sky"></i> Telegram</div>
+                <div class="platform-item"><i class="fa-solid fa-gift text-orange"></i> Dịch Vụ Miễn Phí</div>
+                <div class="platform-item"><i class="fa-solid fa-seedling text-green"></i> DỰ ÁN NUÔI TÔI</div>
+                <div class="platform-item"><i class="fa-brands fa-facebook text-blue"></i> FACEBOOK</div>
+                <div class="platform-item"><i class="fa-brands fa-tiktok text-dark"></i> TIKTOK</div>
+                <div class="platform-item"><i class="fa-brands fa-instagram text-pink"></i> INSTAGRAM</div>
+                <div class="platform-item"><i class="fa-brands fa-youtube text-red"></i> YOUTUBE</div>
+                <div class="platform-item"><i class="fa-brands fa-telegram text-sky"></i> TELEGRAM</div>
+                <div class="platform-item"><i class="fa-solid fa-at text-dark"></i> THREADS</div>
+                <div class="platform-item"><i class="fa-brands fa-x-twitter text-dark"></i> X - TWITTER</div>
+                <div class="platform-item"><i class="fa-brands fa-google text-red"></i> GOOGLE</div>
+                <div class="platform-item"><i class="fa-solid fa-bag-shopping text-orange"></i> SHOPEE</div>
+                <div class="platform-item"><i class="fa-solid fa-cart-flatbed text-blue"></i> LAZADA</div>
+                <div class="platform-item"><i class="fa-brands fa-discord text-purple"></i> DISCORD</div>
+                <div class="platform-item"><i class="fa-brands fa-spotify text-green"></i> SPOTIFY</div>
             </div>
         </div>
     </aside>
@@ -56,120 +74,352 @@
     <header class="top-header">
         <div class="header-left">
             <button id="open-sidebar-btn" class="icon-btn"><i class="fa-solid fa-bars"></i></button>
-            <div class="balance-badge">
-                <i class="fa-solid fa-wallet"></i> <span id="user-balance">0 đ</span>
+            <div class="balance-badge" onclick="switchView('recharge-section')">
+                <i class="fa-solid fa-wallet"></i> <span id="user-balance-top">0 đ</span>
             </div>
         </div>
         <div class="header-right">
             <button class="icon-btn"><i class="fa-regular fa-moon"></i></button>
-            <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
-            <div class="avatar-circle" id="user-avatar">T</div>
+            <span class="lang-code">VI</span>
+            <button class="icon-btn relative"><i class="fa-regular fa-bell"></i><span class="dot-red"></span></button>
+            <div class="avatar-circle" onclick="switchView('profile-section')">T</div>
         </div>
     </header>
 
     <main class="main-container">
 
-        <section id="order-section" class="view-section active">
+        <section id="landing-section" class="view-section">
+            <div class="hero-box text-center">
+                <span class="pill-badge">tangtimviet.com is processing orders right now</span>
+                <h1 class="hero-title">Hệ thống dịch vụ <br><span class="text-gradient">Mạng Xã Hội</span> <br>an toàn và uy tín nhất</h1>
+                <p class="hero-sub">The cheapest and fastest SMM Panel</p>
+                <div class="hero-buttons">
+                    <button class="btn-blue" onclick="showAuthModal('register')">Đăng Ký <i class="fa-solid fa-arrow-right"></i></button>
+                    <button class="btn-outline" onclick="showAuthModal('login')">Đăng Nhập</button>
+                </div>
+            </div>
+
+            <div class="stats-row">
+                <div class="stat-item"><strong>50M++</strong><span>ORDERS DELIVERED</span></div>
+                <div class="stat-item"><strong>&lt; 30s</strong><span>AVG. DELIVERY TIME</span></div>
+                <div class="stat-item"><strong>$0.001</strong><span>STARTING PRICE</span></div>
+            </div>
+
+            <div class="section-title">OUR SERVICES</div>
+            <h2 class="sub-heading text-center">Premium growth solutions for your brand</h2>
+            
+            <div class="service-cards-grid">
+                <div class="card service-card">
+                    <i class="fa-brands fa-instagram text-pink icon-lg"></i>
+                    <h3>Instagram Growth</h3>
+                    <p>High-quality followers, likes and engagement to strengthen your presence.</p>
+                </div>
+                <div class="card service-card">
+                    <i class="fa-brands fa-tiktok text-dark icon-lg"></i>
+                    <h3>TikTok Boost</h3>
+                    <p>Increase reach and viral potential with algorithm-friendly engagement.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard-section" class="view-section active">
+            <div class="alert-banner-yellow">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Người dùng <strong>chưa liên kết Telegram</strong>. Vui lòng liên kết <a href="#" onclick="switchView('profile-section')">tại đây</a> để bảo mật.</span>
+            </div>
+
+            <div class="welcome-box">
+                <h2>Xin chào, <span id="dash-username">tranvanhung13th5</span></h2>
+                <p>Chào mừng bạn đến với trang quản lý của chúng tôi!</p>
+            </div>
+
+            <div class="grid-4-cards">
+                <div class="stat-card">
+                    <i class="fa-solid fa-dollar-sign card-icon text-blue"></i>
+                    <div class="stat-info">
+                        <span class="stat-val">0đ</span>
+                        <span class="stat-lbl">Số dư hiện tại</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-calendar-check card-icon text-orange"></i>
+                    <div class="stat-info">
+                        <span class="stat-val">0đ</span>
+                        <span class="stat-lbl">Tổng nạp tháng</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-wallet card-icon text-green"></i>
+                    <div class="stat-info">
+                        <span class="stat-val">0đ</span>
+                        <span class="stat-lbl">Tổng nạp</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <i class="fa-solid fa-gem card-icon text-purple"></i>
+                    <div class="stat-info">
+                        <span class="stat-val">Thành Viên</span>
+                        <span class="stat-lbl">Cấp bậc</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card margin-top">
+                <div class="card-header"><i class="fa-solid fa-thumbtack text-orange"></i> <strong>Thông báo GHIM</strong></div>
+                <div class="card-body">
+                    <p class="text-sm">TĂNGTIMVIET.COM TUYỂN CỘNG TÁC VIÊN WEB DỊCH VỤ MẠNG XÃ HỘI (DVMXH)</p>
+                    <ul class="check-list">
+                        <li><i class="fa-solid fa-check text-green"></i> Làm việc online tại nhà</li>
+                        <li><i class="fa-solid fa-check text-green"></i> Không yêu cầu kinh nghiệm</li>
+                        <li><i class="fa-solid fa-check text-green"></i> Vốn khởi nghiệp thấp</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="order-section" class="view-section">
             <div class="tab-switcher">
                 <button class="tab-btn active"><i class="fa-solid fa-cart-shopping"></i> Mua dịch vụ</button>
                 <button class="tab-btn" onclick="switchView('history-section')"><i class="fa-solid fa-list-check"></i> Danh Sách Đơn</button>
             </div>
 
             <div class="card">
-                <div class="form-group">
-                    <label class="form-label">Chọn Nền Tảng & Dịch Vụ:</label>
-                    <select id="service-category-select" class="form-control">
-                        <option value="">-- Đang tải danh sách dịch vụ... --</option>
-                    </select>
-                </div>
+                <div class="service-title-head">Theo Dõi Tay</div>
 
-                <div class="form-group">
-                    <label class="form-label">Link Hoặc UID: <span class="sub-link">Mua nhiều link cùng lúc</span></label>
-                    <input type="text" id="order-link" class="form-control" placeholder="Nhập link hoặc ID tùy các máy chủ">
+                <div class="form-group margin-top">
+                    <label class="form-label">Link Hoặc UID: <a href="#" class="sub-link">Mua nhiều link cùng lúc</a></label>
+                    <input type="text" id="order-link-input" class="form-control" placeholder="Nhập link hoặc ID tùy các máy chủ">
                 </div>
 
                 <div class="form-group">
                     <label class="form-label">Chọn máy chủ: <small>(Ấn vào máy chủ để đọc lưu ý)</small></label>
-                    <div id="server-list-container" class="server-list">
-                        </div>
+
+                    <div class="server-cards-list">
+                        <label class="server-item-card">
+                            <input type="radio" name="server_select" value="2348">
+                            <div class="server-details">
+                                <div class="server-name"><strong>[2348]</strong> TikTok Followers | 100% Real Users | Max 10M | 100K/Ngày</div>
+                                <div class="badge-group">
+                                    <span class="badge badge-blue">45,215đ / 1000</span>
+                                    <span class="badge badge-gray">Update 8/8</span>
+                                    <span class="badge badge-green">Top - Đã bán: 3</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="server-item-card selected">
+                            <input type="radio" name="server_select" value="2440" checked>
+                            <div class="server-details">
+                                <div class="server-name"><strong>[2440]</strong> TikTok Followers | HQ Accounts | Max 10M | 100K/Ngày</div>
+                                <div class="badge-group">
+                                    <span class="badge badge-blue">73,306đ / 1000</span>
+                                    <span class="badge badge-orange">Có hủy hoàn</span>
+                                    <span class="badge badge-gray">Đã bán: 0</span>
+                                </div>
+                            </div>
+                        </label>
+
+                        <label class="server-item-card">
+                            <input type="radio" name="server_select" value="2441">
+                            <div class="server-details">
+                                <div class="server-name"><strong>[2441]</strong> TikTok Followers | Max 1M | HQ Account | 50K/Ngày | Non Drop</div>
+                                <div class="badge-group">
+                                    <span class="badge badge-blue">55,239đ / 1000</span>
+                                    <span class="badge badge-orange">Có hủy hoàn</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
-                <div id="server-notice-box" class="notice-box hidden">
-                    <strong>Mã máy chủ: <span id="selected-server-id">---</span></strong>
-                    <p id="selected-server-desc">Vui lòng chọn 1 máy chủ bên trên.</p>
+                <div class="notice-info-box">
+                    <div><strong>Mã máy chủ:</strong> <span id="cur-server-id">2440</span></div>
+                    <div><strong>Lưu ý:</strong> Nguồn tài khoản chất lượng cao, chạy ổn định.</div>
                 </div>
 
                 <div class="form-group margin-top">
-                    <label class="form-label">Số lượng:</label>
-                    <input type="number" id="order-quantity" class="form-control" value="10">
+                    <label class="form-label">Số lượng: (10 ~ 1,000,000)</label>
+                    <input type="number" id="order-qty-input" class="form-control" value="10">
                 </div>
 
-                <div class="form-group">
+                <div class="checkbox-options">
+                    <label><input type="checkbox"> Hẹn giờ chạy đơn</label>
+                    <label><input type="checkbox"> Đặt hàng lặp lại</label>
+                </div>
+
+                <div class="form-group margin-top">
                     <label class="form-label">Ghi chú:</label>
-
-                    <textarea id="order-note" class="form-control" rows="2" placeholder="Ghi chú đơn hàng"></textarea>
+                    <textarea class="form-control" rows="2" placeholder="Ghi chú đơn hàng"></textarea>
                 </div>
 
-                <div class="total-summary-card">
-                    <div class="total-title">Tổng thanh toán: <span id="total-price-text">0 VNĐ</span></div>
-                    <div class="total-subtext" id="total-price-words">Không đồng</div>
-                    <div class="total-qty-hint">Bạn sẽ tăng <strong id="summary-qty">10</strong> số lượng</div>
+                <div class="total-blue-box">
+                    <div class="total-price-head">Tổng thanh toán: <span id="total-price-num">733 VNĐ</span></div>
+                    <div class="total-price-text" id="total-price-words">Bảy trăm ba mươi ba đ</div>
+                    <div class="total-price-sub">Bạn sẽ tăng <strong id="summary-qty-num">10</strong> số lượng</div>
                 </div>
 
-                <button id="submit-order-btn" class="btn-primary-block">
+                <button id="btn-create-order" class="btn-submit-order">
                     <i class="fa-solid fa-cart-shopping"></i> Tạo đơn hàng
                 </button>
 
-                <div class="warning-footer-box">
+                <div class="warning-box">
                     <strong>LƯU Ý NÊN ĐỌC TRÁNH MẤT TIỀN:</strong>
                     <p>Nghiêm cấm buff các đơn có nội dung vi phạm pháp luật, chính trị, đồi trụy...</p>
                 </div>
             </div>
         </section>
 
-        <section id="profile-section" class="view-section">
-            <div class="card">
-                <h2>Thông Tin Cá Nhân</h2>
-                <div class="info-row"><span>Tài khoản:</span> <strong id="profile-username">---</strong></div>
-                <div class="info-row"><span>Số dư:</span> <strong id="profile-balance" class="text-green">0 đ</strong></div>
-                <div class="info-row"><span>Cấp bậc:</span> <span class="badge-blue">Thành Viên</span></div>
-            </div>
-        </section>
-
         <section id="recharge-section" class="view-section">
-            <div class="card">
-                <h2>Chuyển Khoản Ngân Hàng</h2>
-                <div class="qr-container">
-                    <p>Chuyển khoản theo cú pháp bên dưới để được cộng tiền tự động:</p>
-                    <div class="bank-details">
-                        <p>Ngân hàng: <strong>MBBANK</strong></p>
-                        <p>Số TK: <strong>1199231108</strong></p>
-                        <p>Chủ TK: <strong>NGUYEN THANH BINH</strong></p>
-                        <p>Nội dung: <strong class="text-red" id="recharge-memo">gopquynha [username]</strong></p>
+            <div class="tab-switcher">
+                <button class="tab-btn active" id="tab-bank-btn"><i class="fa-solid fa-building-columns"></i> Ngân hàng</button>
+                <button class="tab-btn" id="tab-card-btn"><i class="fa-solid fa-credit-card"></i> Thẻ cào</button>
+            </div>
+
+            <div id="recharge-bank-view" class="card">
+                <div class="bank-instruction">
+                    <h3><i class="fa-solid fa-circle-info text-blue"></i> Hướng dẫn chuyển khoản</h3>
+                    <ol>
+                        <li>Mở app ngân hàng hoặc quét mã QR bên dưới</li>
+                        <li>Chuyển khoản đúng số tài khoản và nội dung phía dưới</li>
+                        <li><strong class="text-red">Quan trọng:</strong> Nhập chính xác nội dung chuyển khoản để được cộng tiền tự động</li>
+                    </ol>
+                </div>
+
+                <div class="bank-card-details margin-top">
+                    <div class="b-row"><span>Ngân hàng:</span> <strong>MBBank</strong></div>
+                    <div class="b-row"><span>Chủ TK:</span> <strong>NGUYEN THANH BINH</strong></div>
+                    <div class="b-row"><span>Số TK:</span> <strong class="text-blue">1199231108</strong> <button class="btn-copy">Copy</button></div>
+                    <div class="b-row"><span>Nội dung:</span> <strong class="text-red">gopquynha tranvanhung13th5</strong> <button class="btn-copy">Copy</button></div>
+                    <div class="b-row"><span>Nạp tối thiểu:</span> <strong>2.000đ</strong></div>
+                </div>
+
+                <div class="qr-code-box text-center margin-top">
+                    <button class="btn-vietqr"><i class="fa-solid fa-qrcode"></i> Quét mã QR để thanh toán</button>
+                    <div class="qr-img-wrapper margin-top">
+                        <img src="https://api.vietqr.io/image/970422-1199231108-compact2.png?amount=100000&addInfo=gopquynha%20tranvanhung13th5&accountName=NGUYEN%20THANH%20BINH" alt="VietQR MBBank" class="vietqr-img">
                     </div>
                 </div>
+            </div>
+
+            <div id="recharge-card-view" class="card hidden">
+                <h3>Nạp thẻ cào</h3>
+                <div class="form-group margin-top">
+                    <label class="form-label">Loại thẻ</label>
+                    <select class="form-control">
+                        <option>GARENA</option>
+                        <option>VIETTEL</option>
+                        <option>VINAPHONE</option>
+                        <option>MOBIFONE</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mệnh giá</label>
+                    <select class="form-control">
+                        <option>50,000đ - 28% - Thực nhận 36,000đ</option>
+                        <option>100,000đ - 28% - Thực nhận 72,000đ</option>
+                        <option>200,000đ - 28% - Thực nhận 144,000đ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Số Seri</label>
+                    <input type="text" class="form-control" placeholder="Nhập số seri">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mã thẻ</label>
+                    <input type="text" class="form-control" placeholder="Nhập mã thẻ">
+                </div>
+                <button class="btn-blue full-width margin-top">Nạp thẻ cào</button>
             </div>
         </section>
 
         <section id="history-section" class="view-section">
             <div class="card">
                 <h2>Lịch Sử Tạo Đơn</h2>
-                <p>Danh sách các đơn hàng bạn đã mua gần đây.</p>
-                <div id="history-list">Chưa có dữ liệu</div>
+                
+                <div class="filters-grid margin-top">
+                    <div class="form-group">
+                        <label class="form-label">Chọn Nền Tảng:</label>
+                        <select class="form-control"><option>Chọn nền tảng...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Phân Loại:</label>
+                        <select class="form-control"><option>Chọn phân loại...</option></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mã đơn hàng hoặc link:</label>
+                        <div class="search-flex">
+                            <input type="text" class="form-control" placeholder="Tìm kiếm dữ liệu...">
+                            <button class="btn-blue"><i class="fa-solid fa-magnifying-glass"></i> Tìm</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-pills-row margin-top">
+                    <span class="pill active">Tất cả (0)</span>
+                    <span class="pill text-green">Hoàn thành (0)</span>
+                    <span class="pill text-blue">Đang chạy (0)</span>
+                    <span class="pill text-purple">Đang xử lý (0)</span>
+                    <span class="pill text-orange">Chờ xử lý (0)</span>
+                    <span class="pill text-red">Đã hủy (0)</span>
+                </div>
+
+                <div class="empty-data-text text-center margin-top">Không có dữ liệu</div>
             </div>
         </section>
 
-        <section id="pricing-section" class="view-section">
-            <div class="card">
-                <h2>Bảng Giá Dịch Vụ</h2>
-                <div id="pricing-table-wrapper">Đang tải bảng giá...</div>
+        <section id="profile-section" class="view-section">
+            <div class="tab-switcher">
+                <button class="tab-btn active" id="tab-profile-btn"><i class="fa-regular fa-user"></i> Thông Tin Cá Nhân</button>
+                <button class="tab-btn" id="tab-security-btn"><i class="fa-solid fa-shield-halved"></i> Bảo mật</button>
+            </div>
+
+            <div id="profile-info-tab" class="card">
+                <div class="info-group-list">
+                    <div class="info-item"><label>Tài khoản:</label> <span>tranvanhung13th5</span></div>
+                    <div class="info-item"><label>Số dư:</label> <span class="text-green font-bold">0 đ</span></div>
+                    <div class="info-item"><label>Cấp bậc:</label> <span class="badge-pill">Thành Viên</span></div>
+                    <div class="info-item"><label>Thời gian đăng ký:</label> <span>10:00:42 19/08/2026</span></div>
+                    
+                    <div class="info-item flex-column">
+                        <label>API Key: <small class="text-red">(Nếu bị lộ hãy đổi mật khẩu)</small></label>
+                        <div class="copy-input-group">
+                            <input type="password" value="473da064c85f992a" readonly class="form-control">
+                            <button class="btn-copy"><i class="fa-regular fa-copy"></i> Copy</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <h3><i class="fa-solid fa-key"></i> Đổi mật khẩu</h3>
+                <div class="form-group margin-top">
+                    <input type="password" class="form-control" placeholder="Mật khẩu hiện tại">
+                </div>
+                <div class="form-group">
+                    <input type="password" class="form-control" placeholder="Mật khẩu mới (ít nhất 6 ký tự)">
+                </div>
+                <button class="btn-blue full-width">Thay đổi mật khẩu</button>
+            </div>
+
+            <div id="profile-security-tab" class="card hidden">
+                <h3>Bảo mật 2 lớp (2FA)</h3>
+                <p class="text-sm text-sub">Sử dụng ứng dụng Google Authenticator để bảo vệ tài khoản tốt hơn.</p>
+                <button class="btn-blue margin-top"><i class="fa-solid fa-shield"></i> Bật 2FA</button>
+
+                <div class="divider"></div>
+
+                <h3>Liên kết Telegram Bot</h3>
+                <p class="text-sm text-sub">Nhấn để mở bot hỗ trợ trên Telegram:</p>
+                <a href="https://t.me/tangtimviet_bot" target="_blank" class="telegram-link-btn margin-top">
+                    <i class="fa-brands fa-telegram"></i> https://t.me/tangtimviet_bot
+                </a>
             </div>
         </section>
 
     </main>
 
     <nav class="bottom-nav">
-        <a href="#" class="nav-item" onclick="switchView('profile-section')">
+        <a href="#" class="nav-item" onclick="switchView('dashboard-section')">
             <i class="fa-solid fa-house"></i>
             <span>Trang chủ</span>
         </a>
@@ -177,8 +427,8 @@
             <i class="fa-solid fa-wallet"></i>
             <span>Nạp tiền</span>
         </a>
-        <div class="nav-item center-btn" onclick="switchView('order-section')">
-            <div class="circle-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+        <div class="nav-item center-fab" onclick="switchView('order-section')">
+            <div class="fab-circle"><i class="fa-solid fa-cart-shopping"></i></div>
         </div>
         <a href="#" class="nav-item" onclick="switchView('history-section')">
             <i class="fa-solid fa-file-lines"></i>
@@ -190,17 +440,17 @@
         </a>
     </nav>
 
-    <div id="error-modal" class="modal-overlay hidden">
-        <div class="modal-box">
-            <div class="modal-icon-error">
+    <div id="error-modal" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-icon-red">
                 <i class="fa-solid fa-xmark"></i>
             </div>
-            <h3 class="modal-title">Lỗi</h3>
-            <p id="modal-error-message" class="modal-message">Vui lòng chọn dịch vụ và nhập link.</p>
-            <button id="modal-close-btn" class="btn-modal-confirm">Xác nhận</button>
+            <h3 class="modal-heading">Lỗi</h3>
+            <p id="modal-err-msg" class="modal-body-text">Vui lòng chọn dịch vụ và nhập link.</p>
+            <button id="modal-confirm-btn" class="btn-modal-blue">Xác nhận</button>
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
