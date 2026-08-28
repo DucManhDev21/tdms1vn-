@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TDMS1VN - Hệ Thống Dịch Vụ Mạng Xã Hội</title>
+<link rel="icon" type="image/png" href="https://api.iconify.design/mdi/rocket-launch.svg?color=%236366f1" />
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- FontAwesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            50: '#eef2ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+            400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+            800: '#3730a3', 900: '#312e81'
+          }
+        },
+        animation: {
+          'fade-in': 'fadeIn .35s ease-out',
+          'slide-up': 'slideUp .35s ease-out',
+          'pulse-slow': 'pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+        },
+        keyframes: {
+          fadeIn: { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
+          slideUp: { '0%': { opacity: 0, transform: 'translateY(12px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } }
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 8px; }
+  .skeleton {
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 37%, #e5e7eb 63%);
+    background-size: 400% 100%;
+    animation: skeleton-loading 1.4s ease infinite;
+  }
+  @keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .platform-card.active { border-color: #6366f1; background: linear-gradient(135deg,#eef2ff,#ffffff); }
+  .badge-pending { background:#fef3c7; color:#92400e; }
+  .badge-processing { background:#dbeafe; color:#1e40af; }
+  .badge-completed { background:#d1fae5; color:#065f46; }
+  .badge-cancelled { background:#fee2e2; color:#991b1b; }
+  .tab-active { border-bottom: 2px solid #6366f1; color:#4f46e5; font-weight:600; }
+</style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 min-h-screen">
+
+<!-- ================= LOADING OVERLAY (app boot) ================= -->
+<div id="app-boot-loader" class="fixed inset-0 bg-white z-[100] flex items-center justify-center">
+  <div class="flex flex-col items-center gap-3">
+    <i class="fa-solid fa-rocket text-brand-600 text-4xl animate-bounce"></i>
+    <p class="text-gray-400 text-sm">Đang tải TDMS1VN...</p>
+  </div>
+</div>
+
+<!-- ================= ADMIN POPUP CONTAINER ================= -->
+<div id="admin-popup-root" class="fixed inset-0 z-[90] hidden items-center justify-center bg-black/50 p-4"></div>
+
+<!-- ================= HEADER ================= -->
+<header class="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="Router.go('home')">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <i class="fa-solid fa-rocket text-white text-sm"></i>
+        </div>
+        <span class="font-extrabold text-lg tracking-tight text-gray-900">TDMS<span class="text-brand-600">1VN</span></span>
+      </div>
+
+      <!-- Desktop nav -->
+      <nav class="hidden md:flex items-center gap-1" id="desktop-nav">
+        <button data-route="home" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Trang chủ</button>
+        <button data-route="services" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Dịch vụ</button>
+        <button data-route="orders" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Lịch sử đơn</button>
+        <button data-route="deposit" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition">Nạp tiền</button>
+      </nav>
+
+      <!-- Right actions -->
+      <div class="flex items-center gap-3">
+        <!-- Balance chip (skeleton until real value known) -->
+        <div id="balance-chip" class="hidden sm:flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full px-4 py-1.5">
+          <i class="fa-solid fa-wallet text-brand-600 text-xs"></i>
+          <span id="balance-chip-value" class="text-sm font-bold text-brand-700 skeleton rounded w-16 h-4 inline-block"></span>
+        </div>
+
+        <!-- Auth buttons (logged out) -->
+        <div id="auth-buttons-guest" class="hidden items-center gap-2">
+          <button onclick="AuthUI.openModal('login')" class="px-4 py-2 text-sm font-semibold text-gray-700 hover:text-brand-600 transition">Đăng nhập</button>
+          <button onclick="AuthUI.openModal('register')" class="px-4 py-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition shadow-sm">Đăng ký</button>
+        </div>
+
+        <!-- User menu (logged in) -->
+        <div id="user-menu" class="hidden relative">
+          <button onclick="UI.toggleUserMenu()" class="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full hover:bg-gray-100 transition">
+            <img id="user-avatar" src="https://api.dicebear.com/7.x/initials/svg?seed=U" class="w-8 h-8 rounded-full border border-gray-200" />
+            <span id="user-name-label" class="hidden sm:block text-sm font-medium text-gray-700 max-w-[120px] truncate">...</span>
+            <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+          </button>
+          <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 animate-fade-in">
+            <div class="px-4 py-2 border-b border-gray-100">
+              <p id="dropdown-email" class="text-xs text-gray-400 truncate">...</p>
+            </div>
+            <button onclick="Router.go('orders')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left w-4 text-gray-400"></i>Lịch sử đơn</button>
+            <button onclick="Router.go('deposit')" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"><i class="fa-solid fa-circle-plus w-4 text-gray-400"></i>Nạp tiền</button>
+            <div class="border-t border-gray-100 mt-1 pt-1">
+              <button onclick="Auth.logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"><i class="fa-solid fa-right-from-bracket w-4"></i>Đăng xuất</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hamburger -->
+        <button id="hamburger-btn" onclick="UI.toggleMobileMenu()" class="md:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-600">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white animate-slide-up">
+    <div class="px-4 py-3 space-y-1">
+      <button data-route="home" class="mobile-nav-link w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50">Trang chủ</button>
+      <button data-route="services" class="mobile-nav-link w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50">Dịch vụ</button>
+      <button data-route="orders" class="mobile-nav-link w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50">Lịch sử đơn</button>
+      <button data-route="deposit" class="mobile-nav-link w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-brand-50">Nạp tiền</button>
+      <div id="mobile-auth-guest" class="hidden pt-2 flex gap-2">
+        <button onclick="AuthUI.openModal('login')" class="flex-1 px-4 py-2.5 text-sm font-semibold text-brand-600 border border-brand-200 rounded-lg">Đăng nhập</button>
+        <button onclick="AuthUI.openModal('register')" class="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-brand-600 rounded-lg">Đăng ký</button>
+      </div>
+      <button id="mobile-logout-btn" onclick="Auth.logout()" class="hidden w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50">Đăng xuất</button>
+    </div>
+  </div>
+</header>
+
+<!-- ================= MAIN APP ================= -->
+<main id="app-root" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 animate-fade-in"></main>
+
+<!-- ================= FOOTER ================= -->
+<footer class="bg-white border-t border-gray-100 mt-16">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid sm:grid-cols-2 md:grid-cols-4 gap-8">
+    <div class="col-span-2 md:col-span-1">
+      <div class="flex items-center gap-2 mb-3">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+          <i class="fa-solid fa-rocket text-white text-xs"></i>
+        </div>
+        <span class="font-extrabold text-gray-900">TDMS1VN</span>
+      </div>
+      <p class="text-sm text-gray-400 leading-relaxed">Nền tảng dịch vụ mạng xã hội tự động, tốc độ cao, đồng bộ dữ liệu thời gian thực.</p>
+    </div>
+    <div>
+      <h4 class="font-semibold text-gray-800 text-sm mb-3">Nền tảng</h4>
+      <ul class="space-y-2 text-sm text-gray-400">
+        <li>TikTok</li><li>Facebook</li><li>Instagram</li><li>Youtube</li><li>Telegram</li><li>Shopee</li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-semibold text-gray-800 text-sm mb-3">Hỗ trợ</h4>
+      <ul class="space-y-2 text-sm text-gray-400">
+        <li><i class="fa-brands fa-telegram mr-1"></i> Telegram Support</li>
+        <li><i class="fa-solid fa-envelope mr-1"></i> support@tdms1vn.com</li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="font-semibold text-gray-800 text-sm mb-3">Bảo mật</h4>
+      <p class="text-sm text-gray-400">Mã hoá SSL 256-bit, xác thực Firebase, giám sát giao dịch 24/7.</p>
+    </div>
+  </div>
+  <div class="border-t border-gray-100 py-4 text-center text-xs text-gray-400">© 2026 TDMS1VN. All rights reserved.</div>
+</footer>
+
+<!-- ================= AUTH MODAL ================= -->
+<div id="auth-modal" class="hidden fixed inset-0 z-[95] items-center justify-center bg-black/50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 relative animate-slide-up">
+    <button onclick="AuthUI.closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
+        <i class="fa-solid fa-rocket text-white text-sm"></i>
+      </div>
+      <span class="font-extrabold text-lg text-gray-900">TDMS<span class="text-brand-600">1VN</span></span>
+    </div>
+
+    <h2 id="auth-modal-title" class="text-xl font-bold text-gray-900 mb-1">Đăng nhập</h2>
+    <p id="auth-modal-subtitle" class="text-sm text-gray-400 mb-5">Chào mừng bạn quay trở lại</p>
+
+    <div id="auth-error-box" class="hidden mb-4 px-3 py-2.5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm"></div>
+
+    <form id="auth-form" class="space-y-3" onsubmit="return AuthUI.handleSubmit(event)">
+      <div id="auth-name-field" class="hidden">
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Họ tên</label>
+        <input type="text" id="auth-name" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="Nguyễn Văn A" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Email</label>
+        <input type="email" id="auth-email" required class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="you@gmail.com" />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Mật khẩu</label>
+        <input type="password" id="auth-password" required minlength="6" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="Tối thiểu 6 ký tự" />
+      </div>
+      <div id="auth-confirm-field" class="hidden">
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Xác nhận mật khẩu</label>
+        <input type="password" id="auth-confirm" class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="Nhập lại mật khẩu" />
+      </div>
+
+      <button type="submit" id="auth-submit-btn" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+        <span id="auth-submit-label">Đăng nhập</span>
+        <i id="auth-submit-spinner" class="hidden fa-solid fa-spinner fa-spin"></i>
+      </button>
+    </form>
+
+    <div class="flex items-center gap-3 my-5">
+      <div class="h-px bg-gray-100 flex-1"></div>
+      <span class="text-xs text-gray-400">hoặc</span>
+      <div class="h-px bg-gray-100 flex-1"></div>
+    </div>
+
+    <button onclick="Auth.loginWithGoogle()" class="w-full border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium text-sm py-2.5 rounded-lg transition flex items-center justify-center gap-2">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-4 h-4" />
+      Tiếp tục với Google
+    </button>
+
+    <p class="text-center text-sm text-gray-400 mt-5">
+      <span id="auth-toggle-text">Chưa có tài khoản?</span>
+      <button type="button" onclick="AuthUI.toggleMode()" id="auth-toggle-btn" class="text-brand-600 font-semibold hover:underline">Đăng ký ngay</button>
+    </p>
+  </div>
+</div>
+
+<!-- ================= ORDER MODAL ================= -->
+<div id="order-modal" class="hidden fixed inset-0 z-[95] items-center justify-center bg-black/50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 sm:p-8 relative animate-slide-up max-h-[90vh] overflow-y-auto">
+    <button onclick="OrderUI.closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <h2 class="text-xl font-bold text-gray-900 mb-1">Đặt dịch vụ</h2>
+    <p id="order-service-name" class="text-sm text-gray-400 mb-5">...</p>
+
+    <div id="order-error-box" class="hidden mb-4 px-3 py-2.5 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm"></div>
+
+    <form id="order-form" onsubmit="return OrderUI.submitOrder(event)" class="space-y-4">
+      <div>
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Link mục tiêu</label>
+        <input type="text" id="order-link" required class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="https://..." />
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-500 mb-1 block">Số lượng <span id="order-qty-range" class="text-gray-400"></span></label>
+        <input type="number" id="order-qty" required class="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm" placeholder="0" oninput="OrderUI.recalc()" />
+      </div>
+
+      <div class="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+        <div class="flex justify-between text-gray-500"><span>Đơn giá / 1 lượt</span><span id="order-unit-price" class="font-medium text-gray-800">0đ</span></div>
+        <div class="flex justify-between text-gray-500"><span>Số dư hiện tại</span><span id="order-current-balance" class="font-medium text-gray-800">0đ</span></div>
+        <div class="border-t border-gray-200 my-1"></div>
+        <div class="flex justify-between text-base"><span class="font-semibold text-gray-800">Tổng thanh toán</span><span id="order-total-price" class="font-bold text-brand-600">0đ</span></div>
+      </div>
+
+      <button type="submit" id="order-submit-btn" class="w-full bg-brand-600 hover:bg-brand-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold text-sm py-3 rounded-lg transition flex items-center justify-center gap-2">
+        <span id="order-submit-label">Xác nhận đặt hàng</span>
+        <i id="order-submit-spinner" class="hidden fa-solid fa-spinner fa-spin"></i>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ================= TOAST ================= -->
+<div id="toast-container" class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-[90vw] sm:max-w-sm"></div>
+
+<script>
+/* =========================================================================
+   TDMS1VN — FRONTEND APP
+   Toàn bộ dữ liệu (balance, services, orders, popups) được đọc REAL-TIME
+   từ Firestore — KHÔNG dùng dữ liệu mock/giả lập cứng trong code.
+   ========================================================================= */
+
+/* ---------- 1. FIREBASE CONFIG ----------
+   Thay các giá trị bên dưới bằng cấu hình dự án Firebase thật của bạn
+   (Project Settings > General > Your apps > SDK setup and configuration).
+*/
+const firebaseConfig = {
+  apiKey: "AIzaSyAIkcg_JzSCWORJt4EKm0gG4XOCcz8a7UI",
+  authDomain: "mstchat-f967d.firebaseapp.com",
+  databaseURL: "https://mstchat-f967d-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "mstchat-f967d",
+  storageBucket: "mstchat-f967d.firebasestorage.app",
+  messagingSenderId: "13505298709",
+  appId: "1:13505298709:web:da999c2d5f25d9bb4fa91c",
+  measurementId: "G-5S081E93W6"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+/* ---------- 2. GLOBAL STATE ---------- */
+const State = {
+  user: null,             // firebase auth user
+  userDoc: null,          // /users/{uid} Firestore document (balance, name...)
+  platforms: [],          // /platforms collection
+  activePlatform: null,
+  services: [],           // /services collection filtered by platform
+  orders: [],             // /orders collection for current user
+  popups: [],             // /popups collection (active, from admin)
+  route: 'home',
+  ordersPage: 1,
+  ordersPerPage: 8,
+  ordersUnsub: null,
+  servicesUnsub: null,
+  popupsUnsub: null,
+  userDocUnsub: null,
+  selectedService: null
+};
+
+const fmtVND = n => (Number(n) || 0).toLocaleString('vi-VN') + 'đ';
+const fmtDate = ts => {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const PLATFORM_ICONS = {
+  tiktok:   { icon: 'fa-brands fa-tiktok', color: '#000000', bg: '#f4f4f5' },
+  facebook: { icon: 'fa-brands fa-facebook', color: '#1877F2', bg: '#eaf2ff' },
+  instagram:{ icon: 'fa-brands fa-instagram', color: '#E1306C', bg: '#fdeef4' },
+  youtube:  { icon: 'fa-brands fa-youtube', color: '#FF0000', bg: '#feecec' },
+  telegram: { icon: 'fa-brands fa-telegram', color: '#229ED9', bg: '#eaf7fd' },
+  shopee:   { icon: 'fa-solid fa-bag-shopping', color: '#EE4D2D', bg: '#fdece8' }
+};
+
+/* ---------- 3. TOAST ---------- */
+const Toast = {
+  show(msg, type = 'info') {
+    const colors = {
+      success: 'bg-green-50 border-green-200 text-green-700',
+      error: 'bg-red-50 border-red-200 text-red-700',
+      info: 'bg-brand-50 border-brand-200 text-brand-700'
+    };
+    const icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
+    const el = document.createElement('div');
+    el.className = `flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium animate-slide-up ${colors[type]}`;
+    el.innerHTML = `<i class="fa-solid ${icons[type]}"></i><span>${msg}</span>`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3500);
+  }
+};
+
+/* ---------- 4. UI HELPERS (menus, skeletons) ---------- */
+const UI = {
+  toggleMobileMenu() {
+    document.getElementById('mobile-menu').classList.toggle('hidden');
+  },
+  closeMobileMenu() {
+    document.getElementById('mobile-menu').classList.add('hidden');
+  },
+  toggleUserMenu() {
+    document.getElementById('user-dropdown').classList.toggle('hidden');
+  },
+  closeUserMenu() {
+    document.getElementById('user-dropdown').classList.add('hidden');
+  },
+  setActiveNav(route) {
+    document.querySelectorAll('.nav-link').forEach(b => {
+      b.classList.toggle('text-brand-600', b.dataset.route === route);
+      b.classList.toggle('bg-brand-50', b.dataset.route === route);
+    });
+    document.querySelectorAll('.mobile-nav-link').forEach(b => {
+      b.classList.toggle('text-brand-600', b.dataset.route === route);
+      b.classList.toggle('bg-brand-50', b.dataset.route === route);
+    });
+  }
+};
+
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('user-dropdown');
+  const btn = e.target.closest('#user-menu');
+  if (!btn && !menu.classList.contains('hidden')) UI.closeUserMenu();
+});
+
+document.querySelectorAll('[data-route]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    Router.go(btn.dataset.route);
+    UI.closeMobileMenu();
+  });
+});
+
+/* ---------- 5. BALANCE DISPLAY (no 0 -> real jump) ---------- */
+const Balance = {
+  /* Đọc số dư phiên trước từ localStorage để hiển thị ngay lập tức,
+     tránh hiện "0đ" rồi mới nhảy lên số thực. Giá trị localStorage
+     luôn được đồng bộ lại bằng dữ liệu Firestore thật ngay khi có. */
+  renderCached() {
+    const cached = localStorage.getItem('tdms1vn_last_balance');
+    const chip = document.getElementById('balance-chip-value');
+    if (cached !== null) {
+      chip.textContent = fmtVND(Number(cached));
+      chip.classList.remove('skeleton', 'w-16', 'h-4');
+    }
+    // else: leave skeleton showing until real data arrives
+  },
+  renderReal(balance) {
+    const chip = document.getElementById('balance-chip-value');
+    chip.classList.remove('skeleton', 'w-16', 'h-4');
+    chip.textContent = fmtVND(balance);
+    localStorage.setItem('tdms1vn_last_balance', String(balance));
+    // update any balance displays inside the app body too
+    document.querySelectorAll('[data-balance-display]').forEach(el => el.textContent = fmtVND(balance));
+  }
+};
+
+/* ---------- 6. AUTH ---------- */
+const Auth = {
+  async loginWithEmail(email, password) {
+    return auth.signInWithEmailAndPassword(email, password);
+  },
+  async registerWithEmail(name, email, password) {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: name });
+    await db.collection('users').doc(cred.user.uid).set({
+      name: name,
+      email: email,
+      balance: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    return cred;
+  },
+  async loginWithGoogle() {
+    try {
+      const result = await auth.signInWithPopup(googleProvider);
+      const userRef = db.collection('users').doc(result.user.uid);
+      const snap = await userRef.get();
+      if (!snap.exists) {
+        await userRef.set({
+          name: result.user.displayName || 'Người dùng',
+          email: result.user.email,
+          balance: 0,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      AuthUI.closeModal();
+    } catch (err) {
+      Toast.show('Đăng nhập Google thất bại: ' + (err.message || err.code), 'error');
+    }
+  },
+  async logout() {
+    await auth.signOut();
+    localStorage.removeItem('tdms1vn_last_balance');
+    Router.go('home');
+    Toast.show('Đã đăng xuất', 'info');
+  }
+};
+
+const AuthUI = {
+  mode: 'login',
+  openModal(mode) {
+    this.mode = mode;
+    this.applyMode();
+    document.getElementById('auth-modal').classList.remove('hidden');
+    document.getElementById('auth-modal').classList.add('flex');
+    document.getElementById('auth-error-box').classList.add('hidden');
+  },
+  closeModal() {
+    document.getElementById('auth-modal').classList.add('hidden');
+    document.getElementById('auth-modal').classList.remove('flex');
+    document.getElementById('auth-form').reset();
+  },
+  toggleMode() {
+    this.mode = this.mode === 'login' ? 'register' : 'login';
+    this.applyMode();
+  },
+  applyMode() {
+    const isLogin = this.mode === 'login';
+    document.getElementById('auth-modal-title').textContent = isLogin ? 'Đăng nhập' : 'Tạo tài khoản';
+    document.getElementById('auth-modal-subtitle').textContent = isLogin ? 'Chào mừng bạn quay trở lại' : 'Bắt đầu sử dụng TDMS1VN ngay hôm nay';
+    document.getElementById('auth-name-field').classList.toggle('hidden', isLogin);
+    document.getElementById('auth-confirm-field').classList.toggle('hidden', isLogin);
+    document.getElementById('auth-submit-label').textContent = isLogin ? 'Đăng nhập' : 'Đăng ký';
+    document.getElementById('auth-toggle-text').textContent = isLogin ? 'Chưa có tài khoản?' : 'Đã có tài khoản?';
+    document.getElementById('auth-toggle-btn').textContent = isLogin ? 'Đăng ký ngay' : 'Đăng nhập';
+    document.getElementById('auth-error-box').classList.add('hidden');
+  },
+  showError(msg) {
+    const box = document.getElementById('auth-error-box');
+    box.textContent = msg;
+    box.classList.remove('hidden');
+  },
+  async handleSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const isLogin = this.mode === 'login';
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) { this.showError('Email không đúng định dạng.'); return false; }
+    if (password.length < 6) { this.showError('Mật khẩu phải có ít nhất 6 ký tự.'); return false; }
+
+    if (!isLogin) {
+      const name = document.getElementById('auth-name').value.trim();
+      const confirm = document.getElementById('auth-confirm').value;
+      if (!name) { this.showError('Vui lòng nhập họ tên.'); return false; }
+      if (password !== confirm) { this.showError('Mật khẩu xác nhận không khớp.'); return false; }
+    }
+
+    const btn = document.getElementById('auth-submit-btn');
+    const spinner = document.getElementById('auth-submit-spinner');
+    btn.disabled = true; spinner.classList.remove('hidden');
+
+    try {
+      if (isLogin) {
+        await Auth.loginWithEmail(email, password);
+      } else {
+        const name = document.getElementById('auth-name').value.trim();
+        await Auth.registerWithEmail(name, email, password);
+      }
+      this.closeModal();
+    } catch (err) {
+      const map = {
+        'auth/user-not-found': 'Tài khoản không tồn tại.',
+        'auth/wrong-password': 'Sai mật khẩu.',
+        'auth/email-already-in-use': 'Email đã được sử dụng.',
+        'auth/invalid-email': 'Email không hợp lệ.',
+        'auth/weak-password': 'Mật khẩu quá yếu.',
+        'auth/invalid-credential': 'Thông tin đăng nhập không đúng.'
+      };
+      this.showError(map[err.code] || err.message);
+    } finally {
+      btn.disabled = false; spinner.classList.add('hidden');
+    }
+    return false;
+  }
+};
+
+/* ---------- 7. ADMIN POPUPS (realtime from Firestore, no mock) ---------- */
+const PopupUI = {
+  dismissedKey(id) { return `tdms1vn_popup_dismiss_${id}`; },
+  isMuted(id) {
+    const until = localStorage.getItem(this.dismissedKey(id));
+    return until && Number(until) > Date.now();
+  },
+  muteFor3Hours(id) {
+    localStorage.setItem(this.dismissedKey(id), String(Date.now() + 3 * 60 * 60 * 1000));
+  },
+  closeOnce(id) {
+    // Just close for this session (no long mute) — handled by removing from DOM
+  },
+  listen() {
+    if (State.popupsUnsub) State.popupsUnsub();
+    State.popupsUnsub = db.collection('popups')
+      .where('active', '==', true)
+      .onSnapshot(snap => {
+        State.popups = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => !this.isMuted(p.id));
+        this.render();
+      }, err => console.error('popups listen error', err));
+  },
+  render() {
+    const root = document.getElementById('admin-popup-root');
+    if (!State.popups.length) {
+      root.classList.add('hidden');
+      root.classList.remove('flex');
+      root.innerHTML = '';
+      return;
+    }
+    const p = State.popups[0]; // show one at a time
+    root.classList.remove('hidden');
+    root.classList.add('flex');
+    root.innerHTML = `
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-slide-up">
+        <button onclick="PopupUI.close('${p.id}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center">
+            <i class="fa-solid fa-bullhorn text-brand-600 text-sm"></i>
+          </div>
+          <h3 class="font-bold text-gray-900">${p.title || 'Thông báo'}</h3>
+        </div>
+        <div class="text-sm text-gray-600 leading-relaxed mb-5 whitespace-pre-line">${p.message || ''}</div>
+        <div class="flex gap-2">
+          <button onclick="PopupUI.mute('${p.id}')" class="flex-1 text-xs font-medium text-gray-500 border border-gray-200 rounded-lg py-2 hover:bg-gray-50">Tắt trong 3 giờ</button>
+          <button onclick="PopupUI.close('${p.id}')" class="flex-1 text-xs font-semibold text-white bg-brand-600 rounded-lg py-2 hover:bg-brand-700">Đã hiểu</button>
+        </div>
+      </div>`;
+  },
+  close(id) {
+    State.popups = State.popups.filter(p => p.id !== id);
+    this.render();
+  },
+  mute(id) {
+    this.muteFor3Hours(id);
+    this.close(id);
+  }
+};
+
+/* ---------- 8. ROUTER ---------- */
+const Router = {
+  go(route) {
+    if ((route === 'orders' || route === 'deposit') && !State.user) {
+      AuthUI.openModal('login');
+      Toast.show('Vui lòng đăng nhập để tiếp tục', 'info');
+      return;
+    }
+    State.route = route;
+    UI.setActiveNav(route);
+    Views.render();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+};
+
+/* ---------- 9. DATA LAYER: PLATFORMS / SERVICES / ORDERS ---------- */
+const Data = {
+  async loadPlatforms() {
+    const snap = await db.collection('platforms').orderBy('order', 'asc').get();
+    State.platforms = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!State.activePlatform && State.platforms.length) {
+      State.activePlatform = State.platforms[0].id;
+    }
+  },
+  listenServices(platformId) {
+    if (State.servicesUnsub) State.servicesUnsub();
+    if (!platformId) { State.services = []; Views.render(); return; }
+    State.servicesUnsub = db.collection('services')
+      .where('platformId', '==', platformId)
+      .onSnapshot(snap => {
+        State.services = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (State.route === 'services') Views.render();
+      }, err => console.error('services listen error', err));
+  },
+  listenOrders(uid) {
+    if (State.ordersUnsub) State.ordersUnsub();
+    if (!uid) { State.orders = []; return; }
+    State.ordersUnsub = db.collection('orders')
+      .where('userId', '==', uid)
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snap => {
+        State.orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (State.route === 'orders') Views.render();
+      }, err => console.error('orders listen error', err));
+  },
+  listenUserDoc(uid) {
+    if (State.userDocUnsub) State.userDocUnsub();
+    State.userDocUnsub = db.collection('users').doc(uid).onSnapshot(doc => {
+      if (doc.exists) {
+        State.userDoc = doc.data();
+        Balance.renderReal(State.userDoc.balance || 0);
+        document.getElementById('user-name-label').textContent = State.userDoc.name || State.user.email;
+        document.getElementById('dropdown-email').textContent = State.userDoc.email || State.user.email;
+        if (State.route === 'deposit' || State.route === 'services') Views.render();
+      }
+    }, err => console.error('userDoc listen error', err));
+  }
+};
+
+/* ---------- 10. ORDER CREATION ---------- */
+const OrderUI = {
+  openModal(serviceId) {
+    const service = State.services.find(s => s.id === serviceId);
+    if (!service) return;
+    if (service.status === 'maintenance') {
+      Toast.show('Dịch vụ đang bảo trì, vui lòng thử lại sau.', 'error');
+      return;
+    }
+    State.selectedService = service;
+    document.getElementById('order-service-name').textContent = service.name;
+    document.getElementById('order-unit-price').textContent = fmtVND(service.price);
+    document.getElementById('order-qty-range').textContent = `(${service.min || 1} - ${service.max || '∞'})`;
+    document.getElementById('order-link').value = '';
+    document.getElementById('order-qty').value = '';
+    document.getElementById('order-current-balance').textContent = fmtVND((State.userDoc && State.userDoc.balance) || 0);
+    document.getElementById('order-total-price').textContent = '0đ';
+    document.getElementById('order-error-box').classList.add('hidden');
+    document.getElementById('order-modal').classList.remove('hidden');
+    document.getElementById('order-modal').classList.add('flex');
+  },
+  closeModal() {
+    document.getElementById('order-modal').classList.add('hidden');
+    document.getElementById('order-modal').classList.remove('flex');
+  },
+  recalc() {
+    const qty = Number(document.getElementById('order-qty').value) || 0;
+    const service = State.selectedService;
+    if (!service) return;
+    const total = qty * Number(service.price || 0);
+    document.getElementById('order-total-price').textContent = fmtVND(total);
+  },
+  async submitOrder(e) {
+    e.preventDefault();
+    const errBox = document.getElementById('order-error-box');
+    errBox.classList.add('hidden');
+
+    const service = State.selectedService;
+    const link = document.getElementById('order-link').value.trim();
+    const qty = Number(document.getElementById('order-qty').value);
+
+    if (!service) return false;
+    if (!link) { errBox.textContent = 'Vui lòng nhập link mục tiêu.'; errBox.classList.remove('hidden'); return false; }
+    if (!qty || qty <= 0) { errBox.textContent = 'Số lượng không hợp lệ.'; errBox.classList.remove('hidden'); return false; }
+    if (service.min && qty < service.min) { errBox.textContent = `Số lượng tối thiểu là ${service.min}.`; errBox.classList.remove('hidden'); return false; }
+    if (service.max && qty > service.max) { errBox.textContent = `Số lượng tối đa là ${service.max}.`; errBox.classList.remove('hidden'); return false; }
+
+    const total = qty * Number(service.price || 0);
+    const currentBalance = (State.userDoc && State.userDoc.balance) || 0;
+
+    // Bắt buộc kiểm tra số dư trước khi cho phép tạo đơn
+    if (currentBalance < total) {
+      errBox.textContent = `Số dư không đủ. Cần ${fmtVND(total)}, hiện có ${fmtVND(currentBalance)}.`;
+      errBox.classList.remove('hidden');
+      return false;
+    }
+
+    const btn = document.getElementById('order-submit-btn');
+    const spinner = document.getElementById('order-submit-spinner');
+    const label = document.getElementById('order-submit-label');
+    btn.disabled = true; spinner.classList.remove('hidden'); label.textContent = 'Đang xử lý...';
+
+    try {
+      const uid = State.user.uid;
+      const userRef = db.collection('users').doc(uid);
+      const orderRef = db.collection('orders').doc();
+
+      await db.runTransaction(async (tx) => {
+        const userSnap = await tx.get(userRef);
+        const balance = (userSnap.data() && userSnap.data().balance) || 0;
+        if (balance < total) throw new Error('INSUFFICIENT_BALANCE');
+
+        tx.update(userRef, { balance: firebase.firestore.FieldValue.increment(-total) });
+        tx.set(orderRef, {
+          userId: uid,
+          platformId: service.platformId,
+          platformName: (State.platforms.find(p => p.id === service.platformId) || {}).name || '',
+          serviceId: service.id,
+          serviceName: service.name,
+          link: link,
+          quantity: qty,
+          unitPrice: service.price,
+          totalPrice: total,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+
+      Toast.show('Đặt hàng thành công!', 'success');
+      this.closeModal();
+      Router.go('orders');
+    } catch (err) {
+      if (err.message === 'INSUFFICIENT_BALANCE') {
+        errBox.textContent = 'Số dư không đủ để thực hiện giao dịch.';
+      } else {
+        errBox.textContent = 'Có lỗi xảy ra: ' + err.message;
+      }
+      errBox.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; spinner.classList.add('hidden'); label.textContent = 'Xác nhận đặt hàng';
+    }
+    return false;
+  }
+};
+
+/* ---------- 11. VIEWS (render app-root based on route) ---------- */
+const Views = {
+  render() {
+    const root = document.getElementById('app-root');
+    if (!State.user) {
+      root.innerHTML = this.homeView();
+      this.renderPlatformGrid();
+      return;
+    }
+    switch (State.route) {
+      case 'services': root.innerHTML = this.servicesView(); this.afterServicesRender(); break;
+      case 'orders': root.innerHTML = this.ordersView(); break;
+      case 'deposit': root.innerHTML = this.depositView(); break;
+      default: root.innerHTML = this.homeView(); this.renderPlatformGrid();
+    }
+  },
+
+  /* ---- HOME / PLATFORM SELECTOR ---- */
+  homeView() {
+    return `
+      <section class="text-center py-10 sm:py-16">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">Tăng tương tác đa nền tảng<br class="hidden sm:block"/> <span class="text-brand-600">tốc độ cao, an toàn</span></h1>
+        <p class="text-gray-400 max-w-xl mx-auto mb-8">TikTok • Facebook • Instagram • Youtube • Telegram • Shopee — đồng bộ thời gian thực, bảo mật đa lớp.</p>
+      </section>
+      <section>
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Chọn nền tảng</h2>
+        <div id="platform-grid" class="grid sm:grid-cols-2 gap-3"></div>
+      </section>`;
+  },
+  renderPlatformGrid() {
+    const grid = document.getElementById('platform-grid');
+    if (!grid) return;
+    if (!State.platforms.length) {
+      grid.innerHTML = Array(6).fill(0).map(() => `<div class="h-16 rounded-xl skeleton"></div>`).join('');
+      return;
+    }
+    grid.innerHTML = State.platforms.map(p => {
+      const meta = PLATFORM_ICONS[p.id] || { icon: 'fa-solid fa-star', color: '#6366f1', bg: '#eef2ff' };
+      return `
+        <button onclick="Views.selectPlatform('${p.id}')" class="platform-card flex items-center justify-between gap-3 bg-white border-2 border-gray-100 rounded-xl px-4 py-4 hover:border-brand-300 hover:shadow-sm transition text-left">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg" style="background:${meta.bg};color:${meta.color}">
+              <i class="${meta.icon}"></i>
+            </div>
+            <div>
+              <p class="font-semibold text-gray-800">${p.name}</p>
+              <p class="text-xs text-gray-400">${p.serviceCount != null ? p.serviceCount + ' dịch vụ' : ''}</p>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-right text-gray-300"></i>
+        </button>`;
+    }).join('');
+  },
+  selectPlatform(id) {
+    if (!State.user) { AuthUI.openModal('login'); return; }
+    State.activePlatform = id;
+    Data.listenServices(id);
+    Router.go('services');
+  },
+
+  /* ---- SERVICES VIEW ---- */
+  servicesView() {
+    const balance = (State.userDoc && State.userDoc.balance) || 0;
+    return `
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h2 class="text-lg font-bold text-gray-900">Chọn dịch vụ</h2>
+        <div class="flex items-center gap-2 bg-white border border-gray-100 rounded-full px-1 py-1 overflow-x-auto" id="platform-tabs"></div>
+      </div>
+      <div id="balance-note" class="mb-4 text-sm text-gray-400">Số dư khả dụng: <span class="font-semibold text-gray-700" data-balance-display>${fmtVND(balance)}</span></div>
+      <div id="services-list" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>`;
+  },
+  afterServicesRender() {
+    const tabs = document.getElementById('platform-tabs');
+    if (tabs) {
+      if (!State.platforms.length) {
+        tabs.innerHTML = `<div class="w-40 h-8 skeleton rounded-full"></div>`;
+      } else {
+        tabs.innerHTML = State.platforms.map(p => `
+          <button onclick="Views.switchPlatformTab('${p.id}')" class="px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${p.id === State.activePlatform ? 'bg-brand-600 text-white' : 'text-gray-500 hover:bg-gray-50'}">${p.name}</button>
+        `).join('');
+      }
+    }
+    this.renderServicesList();
+  },
+  switchPlatformTab(id) {
+    State.activePlatform = id;
+    Data.listenServices(id);
+    this.afterServicesRender();
+  },
+  renderServicesList() {
+    const list = document.getElementById('services-list');
+    if (!list) return;
+    if (!State.services.length) {
+      list.innerHTML = Array(3).fill(0).map(() => `<div class="h-40 rounded-2xl skeleton"></div>`).join('');
+      return;
+    }
+    list.innerHTML = State.services.map(s => {
+      const isMaint = s.status === 'maintenance';
+      return `
+        <div class="bg-white border border-gray-100 rounded-2xl p-5 flex flex-col gap-3 ${isMaint ? 'opacity-60' : 'hover:shadow-md hover:border-brand-200'} transition">
+          <div class="flex items-start justify-between">
+            <h3 class="font-semibold text-gray-800 text-sm leading-snug pr-2">${s.name}</h3>
+            <span class="shrink-0 text-[10px] font-bold px-2 py-1 rounded-full ${isMaint ? 'bg-gray-100 text-gray-500' : 'bg-green-50 text-green-600'}">${isMaint ? 'Bảo trì' : 'Hoạt động'}</span>
+          </div>
+          <p class="text-xs text-gray-400 line-clamp-2">${s.description || ''}</p>
+          <div class="flex items-end justify-between mt-auto pt-2">
+            <div>
+              <p class="text-[10px] text-gray-400">Đơn giá / lượt</p>
+              <p class="font-bold text-brand-600">${fmtVND(s.price)}</p>
+            </div>
+            <button ${isMaint ? 'disabled' : ''} onclick="OrderUI.openModal('${s.id}')" class="text-xs font-semibold px-4 py-2 rounded-lg ${isMaint ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-brand-600 text-white hover:bg-brand-700'} transition">Đặt ngay</button>
+          </div>
+        </div>`;
+    }).join('');
+  },
+
+  /* ---- ORDERS VIEW ---- */
+  ordersView() {
+    return `
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-bold text-gray-900">Lịch sử đơn hàng</h2>
+        <span class="text-sm text-gray-400">Số dư: <span class="font-semibold text-gray-700" data-balance-display>${fmtVND((State.userDoc && State.userDoc.balance) || 0)}</span></span>
+      </div>
+      <div id="orders-table-wrap" class="bg-white border border-gray-100 rounded-2xl overflow-hidden"></div>
+      <div id="orders-pagination" class="flex items-center justify-center gap-2 mt-5"></div>`;
+  },
+
+  /* ---- DEPOSIT VIEW ---- */
+  depositView() {
+    return `
+      <div class="max-w-lg mx-auto">
+        <h2 class="text-lg font-bold text-gray-900 mb-1">Nạp tiền vào tài khoản</h2>
+        <p class="text-sm text-gray-400 mb-6">Số dư hiện tại: <span class="font-semibold text-gray-700" data-balance-display>${fmtVND((State.userDoc && State.userDoc.balance) || 0)}</span></p>
+        <div class="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+          <i class="fa-solid fa-circle-info text-brand-500 text-2xl mb-3"></i>
+          <p class="text-sm text-gray-500 leading-relaxed">Cổng thanh toán nạp tiền sẽ được cấu hình kết nối với hệ thống Backend/Cổng thanh toán thực tế của bạn (ví dụ: chuyển khoản ngân hàng tự động, thẻ cào, ví điện tử). Vui lòng tích hợp API nạp tiền tương ứng tại đây.</p>
+        </div>
+      </div>`;
+  }
+};
+
+/* ---------- 12. ORDERS TABLE RENDER (with pagination) ---------- */
+function renderOrdersTable() {
+  const wrap = document.getElementById('orders-table-wrap');
+  const pager = document.getElementById('orders-pagination');
+  if (!wrap) return;
+
+  if (!State.orders.length) {
+    // could be loading OR genuinely empty; distinguish via a data-loaded flag
+    wrap.innerHTML = `
+      <div class="p-10 text-center text-gray-400 text-sm">
+        <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+        Chưa có đơn hàng nào.
+      </div>`;
+    if (pager) pager.innerHTML = '';
+    return;
+  }
+
+  const perPage = State.ordersPerPage;
+  const totalPages = Math.ceil(State.orders.length / perPage);
+  if (State.ordersPage > totalPages) State.ordersPage = totalPages;
+  const start = (State.ordersPage - 1) * perPage;
+  const pageOrders = State.orders.slice(start, start + perPage);
+
+  const badgeMap = {
+    pending: { cls: 'badge-pending', label: 'Đang xử lý' },
+    processing: { cls: 'badge-processing', label: 'Đang chạy' },
+    completed: { cls: 'badge-completed', label: 'Hoàn thành' },
+    cancelled: { cls: 'badge-cancelled', label: 'Đã hủy' }
+  };
+
+  wrap.innerHTML = `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-100 text-left text-xs text-gray-400">
+            <th class="px-4 py-3 font-medium">Mã đơn</th>
+            <th class="px-4 py-3 font-medium">Nền tảng</th>
+            <th class="px-4 py-3 font-medium">Dịch vụ</th>
+            <th class="px-4 py-3 font-medium">Link</th>
+            <th class="px-4 py-3 font-medium text-right">SL</th>
+            <th class="px-4 py-3 font-medium text-right">Tổng tiền</th>
+            <th class="px-4 py-3 font-medium">Thời gian</th>
+            <th class="px-4 py-3 font-medium">Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pageOrders.map(o => {
+            const b = badgeMap[o.status] || badgeMap.pending;
+            return `
+              <tr class="border-b border-gray-50 hover:bg-gray-50/60">
+                <td class="px-4 py-3 font-mono text-xs text-gray-500">#${o.id.slice(0, 8)}</td>
+                <td class="px-4 py-3 text-gray-700">${o.platformName || '—'}</td>
+                <td class="px-4 py-3 text-gray-700 max-w-[160px] truncate">${o.serviceName || '—'}</td>
+                <td class="px-4 py-3 text-brand-600 max-w-[140px] truncate"><a href="${o.link}" target="_blank" class="hover:underline">${o.link || '—'}</a></td>
+                <td class="px-4 py-3 text-right text-gray-700">${(o.quantity || 0).toLocaleString('vi-VN')}</td>
+                <td class="px-4 py-3 text-right font-semibold text-gray-800">${fmtVND(o.totalPrice)}</td>
+                <td class="px-4 py-3 text-gray-400 whitespace-nowrap text-xs">${fmtDate(o.createdAt)}</td>
+                <td class="px-4 py-3"><span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${b.cls}">${b.label}</span></td>
+              </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  if (pager) {
+    let btns = '';
+    for (let i = 1; i <= totalPages; i++) {
+      btns += `<button onclick="OrdersPaginate(${i})" class="w-8 h-8 rounded-lg text-xs font-semibold ${i === State.ordersPage ? 'bg-brand-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}">${i}</button>`;
+    }
+    pager.innerHTML = btns;
+  }
+}
+function OrdersPaginate(page) {
+  State.ordersPage = page;
+  renderOrdersTable();
+}
+
+// hook: whenever orders view is active render table after Views.render() sets DOM
+const _origRender = Views.render.bind(Views);
+Views.render = function () {
+  _origRender();
+  if (State.route === 'orders' && State.user) renderOrdersTable();
+};
+
+/* ---------- 13. AUTH STATE OBSERVER ---------- */
+auth.onAuthStateChanged(async (user) => {
+  document.getElementById('app-boot-loader').style.opacity = '0';
+  setTimeout(() => document.getElementById('app-boot-loader').style.display = 'none', 300);
+
+  State.user = user;
+
+  const guestBtns = document.getElementById('auth-buttons-guest');
+  const userMenu = document.getElementById('user-menu');
+  const mobileGuest = document.getElementById('mobile-auth-guest');
+  const mobileLogout = document.getElementById('mobile-logout-btn');
+  const balanceChip = document.getElementById('balance-chip');
+
+  if (user) {
+    guestBtns.classList.add('hidden'); guestBtns.classList.remove('flex');
+    userMenu.classList.remove('hidden');
+    mobileGuest.classList.add('hidden');
+    mobileLogout.classList.remove('hidden');
+    balanceChip.classList.remove('hidden'); balanceChip.classList.add('flex');
+
+    document.getElementById('user-avatar').src = user.photoURL || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.displayName || user.email)}`;
+    document.getElementById('user-name-label').textContent = user.displayName || user.email;
+    document.getElementById('dropdown-email').textContent = user.email;
+
+    Balance.renderCached(); // show last-known balance instantly, no 0-flash
+    Data.listenUserDoc(user.uid);
+    Data.listenOrders(user.uid);
+
+    if (!State.platforms.length) await Data.loadPlatforms();
+    if (State.activePlatform) Data.listenServices(State.activePlatform);
+
+    if (State.route === 'home') Router.go('services');
+    else Views.render();
+  } else {
+    guestBtns.classList.remove('hidden'); guestBtns.classList.add('flex');
+    userMenu.classList.add('hidden');
+    mobileGuest.classList.remove('hidden');
+    mobileLogout.classList.add('hidden');
+    balanceChip.classList.add('hidden'); balanceChip.classList.remove('flex');
+
+    if (State.ordersUnsub) State.ordersUnsub();
+    if (State.userDocUnsub) State.userDocUnsub();
+    State.orders = []; State.userDoc = null;
+
+    if (!State.platforms.length) await Data.loadPlatforms();
+    State.route = 'home';
+    Views.render();
+  }
+});
+
+/* ---------- 14. BOOT ---------- */
+Balance.renderCached();
+PopupUI.listen();
+Data.loadPlatforms().then(() => { if (!State.user) Views.render(); });
+
+// Safety: if Firebase never resolves auth (e.g. offline), hide the boot loader after 4s
+setTimeout(() => {
+  const loader = document.getElementById('app-boot-loader');
+  if (loader && loader.style.display !== 'none') {
+    loader.style.opacity = '0';
+    setTimeout(() => loader.style.display = 'none', 300);
+  }
+}, 4000);
+</script>
+</body>
+</html>
