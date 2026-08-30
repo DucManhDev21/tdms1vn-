@@ -511,20 +511,34 @@
       });
     }
 
-    async function getBearerToken() {
+    async function getBearerToken(forceRefresh = true) {
       if (!auth.currentUser) throw new Error('Bạn chưa đăng nhập.');
-      return auth.currentUser.getIdToken(true);
+      return auth.currentUser.getIdToken(forceRefresh);
     }
 
-    async function api(path, options = {}) {
-      const token = await getBearerToken();
+    async function api(path, options = {}, retry = true) {
+      const token = await getBearerToken(true);
       const headers = new Headers(options.headers || {});
       headers.set('Authorization', `Bearer ${token}`);
-      if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-      const response = await fetch(path, { ...options, headers });
+      headers.set('Accept', 'application/json');
+      if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+      let response;
+      try {
+        response = await fetch(path, { ...options, headers, cache: 'no-store' });
+      } catch (error) {
+        if (retry) {
+          await sleep(500);
+          return api(path, options, false);
+        }
+        throw new Error(`Không kết nối được máy chủ: ${error.message}`);
+      }
       const text = await response.text();
       let payload = {};
-      try { payload = text ? JSON.parse(text) : {}; } catch { payload = { error: text || 'Unknown response' }; }
+      try { payload = text ? JSON.parse(text) : {}; } catch { payload = { error: text || `HTTP ${response.status}` }; }
+      if (response.status === 401 && retry) {
+        await auth.currentUser?.getIdToken(true);
+        return api(path, options, false);
+      }
       if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
       return payload;
     }
@@ -543,11 +557,11 @@
           createdAt: new Date()
         });
       }
-      try {
-        await api('/api/auth/profile', { method: 'POST', body: JSON.stringify({ displayName: user.displayName || '', photoURL: user.photoURL || '' }) });
-      } catch (error) {
-        showToast(error.message, 'warning', 5000);
+      const profileResponse = await api('/api/auth/profile', { method: 'POST', body: JSON.stringify({ displayName: user.displayName || '', photoURL: user.photoURL || '' }) });
+      if (profileResponse?.user) {
+        state.profile = profileResponse.user;
       }
+      return profileResponse;
     }
 
     function setAuthMode(register) {
@@ -749,21 +763,55 @@
       }
     }
 
+    function parseRate(value) {
+      if (typeof value === 'number' && Number.isFinite(value)) return value;
+      const text = String(value ?? '').trim().replace(/\s/g, '').replace(/,/g, '.');
+      const cleaned = text.replace(/[^0-9.-]/g, '');
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function normalizeClientService(item) {
+      return {
+        ...item,
+        service: String(item.service ?? item.id ?? ''),
+        name: String(item.name ?? ''),
+        rate: parseRate(item.rate ?? item.cost ?? item.price),
+        min: Math.max(0, Number.parseInt(item.min ?? item.minimum ?? 0, 10) || 0),
+        max: Math.max(0, Number.parseInt(item.max ?? item.maximum ?? 0, 10) || 0)
+      };
+    }
+
     async function loadServices() {
       const seq = ++state.serviceRequestSeq;
-      $('serviceSelect').innerHTML = '<option value="">Đang tải dịch vụ…</option>';
+      const serviceSelect = $('serviceSelect');
+      serviceSelect.innerHTML = '<option value="">Đang tải dịch vụ…</option>';
+      state.selectedService = null;
       try {
         const payload = await api('/api/services');
         if (seq !== state.serviceRequestSeq) return;
-        state.services = Array.isArray(payload.services) ? payload.services : [];
+        const incoming = Array.isArray(payload.services) ? payload.services : [];
+        state.services = incoming.map(normalizeClientService).filter((item) => item.service && item.name && item.rate >= 0 && item.max >= item.min);
         populatePlatforms();
         populateCategories();
         renderServiceOptions();
         renderPricing();
+        updateOrderTotal();
+        if (!state.services.length) {
+          serviceSelect.innerHTML = '<option value="">Provider chưa trả về dịch vụ hợp lệ</option>';
+          showToast('Provider đã phản hồi nhưng không có dịch vụ hợp lệ.', 'warning', 5200);
+          return;
+        }
         showToast(`Đã tải ${state.services.length.toLocaleString('vi-VN')} dịch vụ thật.`, 'success', 3200);
       } catch (error) {
-        $('serviceSelect').innerHTML = '<option value="">Không thể tải dịch vụ</option>';
-        showToast(error.message, 'error', 5200);
+        serviceSelect.innerHTML = '<option value="">Không thể tải dịch vụ</option>';
+        state.services = [];
+        state.selectedService = null;
+        populatePlatforms();
+        populateCategories();
+        renderPricing();
+        updateOrderTotal();
+        showToast(error.message, 'error', 6200);
       }
     }
 
@@ -804,26 +852,34 @@
     }
 
     function selectServiceById(id) {
-      const service = state.services.find((item) => String(item.service) === String(id));
-      if (!service) return;
-      state.selectedService = service;
-      $('platformSelect').value = service.platform;
+      const normalizedId = String(id ?? '').trim();
+      const service = state.services.find((item) => String(item.service).trim() === normalizedId);
+      if (!service) {
+        state.selectedService = null;
+        $('serviceMeta').classList.add('hidden');
+        updateOrderTotal();
+        return;
+      }
+      state.selectedService = normalizeClientService(service);
+      $('platformSelect').value = state.selectedService.platform || '';
       populateCategories();
-      $('categorySelect').value = service.category;
+      $('categorySelect').value = state.selectedService.category || '';
       renderServiceOptions();
-      $('serviceSelect').value = service.service;
+      $('serviceSelect').value = state.selectedService.service;
       $('serviceMeta').classList.remove('hidden');
-      $('serviceTypeBadge').textContent = service.type;
-      $('serviceRefillBadge').textContent = service.refill ? '✓ Refill' : 'Refill: Không';
-      $('serviceCancelBadge').textContent = service.cancel ? '✓ Cancel' : 'Cancel: Không';
-      $('serviceRefillBadge').classList.toggle('text-emerald-300', service.refill);
-      $('serviceCancelBadge').classList.toggle('text-cyan-300', service.cancel);
-      $('serviceRefillBadge').classList.toggle('opacity-50', !service.refill);
-      $('serviceCancelBadge').classList.toggle('opacity-50', !service.cancel);
-      $('serviceNote').textContent = `ID ${service.service} · ${service.platform} · ${service.category} · Min ${fmt.format(service.min)} · Max ${fmt.format(service.max)} · Rate ${service.rate}/1K.`;
-      $('quantityInput').min = service.min;
-      $('quantityInput').max = service.max;
-      if (!Number($('quantityInput').value) || Number($('quantityInput').value) < service.min) $('quantityInput').value = service.min || '';
+      $('serviceTypeBadge').textContent = state.selectedService.type || 'Default';
+      $('serviceRefillBadge').textContent = state.selectedService.refill ? '✓ Refill' : 'Refill: Không';
+      $('serviceCancelBadge').textContent = state.selectedService.cancel ? '✓ Cancel' : 'Cancel: Không';
+      $('serviceRefillBadge').classList.toggle('text-emerald-300', Boolean(state.selectedService.refill));
+      $('serviceCancelBadge').classList.toggle('text-cyan-300', Boolean(state.selectedService.cancel));
+      $('serviceRefillBadge').classList.toggle('opacity-50', !state.selectedService.refill);
+      $('serviceCancelBadge').classList.toggle('opacity-50', !state.selectedService.cancel);
+      $('serviceNote').textContent = `ID ${state.selectedService.service} · ${state.selectedService.platform || 'Other'} · ${state.selectedService.category || 'Khác'} · Min ${fmt.format(state.selectedService.min)} · Max ${fmt.format(state.selectedService.max)} · Rate ${fmt.format(state.selectedService.rate)}/1K.`;
+      $('quantityInput').min = state.selectedService.min;
+      $('quantityInput').max = state.selectedService.max;
+      const currentQuantity = Number($('quantityInput').value || 0);
+      if (!Number.isInteger(currentQuantity) || currentQuantity < state.selectedService.min) $('quantityInput').value = state.selectedService.min || '';
+      if (state.selectedService.max > 0 && Number($('quantityInput').value || 0) > state.selectedService.max) $('quantityInput').value = state.selectedService.max;
       updateOrderTotal();
     }
 
@@ -860,18 +916,20 @@
     }
 
     function updateOrderTotal() {
-      const quantity = Number($('quantityInput').value || 0);
+      const rawQuantity = Number($('quantityInput').value || 0);
+      const quantity = Number.isFinite(rawQuantity) ? Math.floor(rawQuantity) : 0;
       const service = state.selectedService;
       const linkCount = Math.max(1, getLinks().length);
-      if (!service || !quantity) {
+      const rate = parseRate(service?.rate);
+      if (!service || !Number.isFinite(rate) || rate < 0 || quantity <= 0) {
         $('orderTotal').textContent = '0 ₫';
         $('orderUnitHint').textContent = 'Chọn dịch vụ để tính giá.';
         return;
       }
-      const perLink = (Number(service.rate) * quantity) / 1000;
+      const perLink = (rate * quantity) / 1000;
       const total = perLink * linkCount;
       $('orderTotal').textContent = money(total);
-      $('orderUnitHint').textContent = `${fmt.format(service.rate)} / 1K · ${fmt.format(quantity)} lượt · ${linkCount} link`;
+      $('orderUnitHint').textContent = `${fmt.format(rate)} / 1K · ${fmt.format(quantity)} lượt · ${linkCount.toLocaleString('vi-VN')} link`;
     }
 
     function statusBadge(status) {
@@ -889,11 +947,13 @@
     async function submitOrder() {
       const service = state.selectedService;
       const links = getLinks();
-      const quantity = Number($('quantityInput').value || 0);
+      const quantity = Math.floor(Number($('quantityInput').value || 0));
+      const rate = parseRate(service?.rate);
       if (!service) return showToast('Vui lòng chọn dịch vụ.', 'warning');
       if (links.length === 0) return showToast('Vui lòng nhập ít nhất một link.', 'warning');
+      if (!Number.isFinite(rate) || rate < 0) return showToast('Dịch vụ chưa có đơn giá hợp lệ. Hãy tải lại danh sách dịch vụ.', 'warning');
       if (quantity < service.min || quantity > service.max) return showToast(`Số lượng phải từ ${fmt.format(service.min)} đến ${fmt.format(service.max)}.`, 'warning');
-      const total = Number(((service.rate * quantity) / 1000 * links.length).toFixed(8));
+      const total = Number(((rate * quantity) / 1000 * links.length).toFixed(8));
       if (Number(state.profile?.balance || 0) < total) return showToast('Số dư không đủ. Hãy nạp tiền trước.', 'warning');
       const button = $('submitOrderBtn');
       button.disabled = true;
@@ -904,7 +964,7 @@
           serviceName: service.name,
           links,
           quantity,
-          rate: service.rate,
+          rate,
           min: service.min,
           max: service.max
         };
